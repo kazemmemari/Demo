@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ماشین حساب</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-1: #1a2332;
+      --bg-2: #0f1620;
+      --panel: #243044;
+      --ink: #e8eef7;
+      --muted: #8fa3bf;
+      --accent: #3d9a7a;
+      --accent-press: #2f7d62;
+      --warn: #c45c5c;
+      --key: #2c3b52;
+      --key-hover: #364a66;
+      --display: #121a26;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Vazirmatn", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, #2a4a5c 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 90% 90%, #1e3a32 0%, transparent 50%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+    }
+
+    .shell {
+      width: min(100%, 22rem);
+      animation: rise 0.55s ease-out both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+      text-align: center;
+    }
+
+    .hint {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .calc {
+      background: var(--panel);
+      border-radius: 1.25rem;
+      padding: 1rem;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      animation: rise 0.7s ease-out 0.08s both;
+    }
+
+    .display {
+      background: var(--display);
+      border-radius: 0.85rem;
+      padding: 1rem 1.1rem;
+      min-height: 4.5rem;
+      margin-bottom: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 0.25rem;
+      direction: ltr;
+      text-align: right;
+    }
+
+    .expr {
+      color: var(--muted);
+      font-size: 0.9rem;
+      min-height: 1.2em;
+      word-break: break-all;
+    }
+
+    .result {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      word-break: break-all;
+    }
+
+    .result.error { color: var(--warn); font-size: 1rem; font-weight: 600; }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.55rem;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: 600;
+      border: 0;
+      border-radius: 0.75rem;
+      padding: 0.95rem 0;
+      background: var(--key);
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    button:hover { background: var(--key-hover); }
+    button:active { transform: scale(0.96); }
+
+    .op { background: #355a4c; }
+    .op:hover { background: #3f6b5a; }
+    .eq { background: var(--accent); grid-column: span 2; }
+    .eq:hover { background: var(--accent-press); }
+    .span2 { grid-column: span 2; }
+    .ghost { color: var(--muted); }
+
+    .api-note {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      animation: rise 0.8s ease-out 0.15s both;
+    }
+
+    .api-note code {
+      font-family: ui-monospace, monospace;
+      direction: ltr;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1>ماشین حساب</h1>
+    <p class="hint">چهار عمل اصلی روی سرور HTTP</p>
+
+    <div class="calc">
+      <div class="display">
+        <div class="expr" id="expr"></div>
+        <div class="result" id="result">0</div>
+      </div>
+      <div class="keys">
+        <button type="button" class="ghost" data-action="clear">C</button>
+        <button type="button" class="ghost" data-action="back">⌫</button>
+        <button type="button" class="op" data-op="div">÷</button>
+        <button type="button" class="op" data-op="mul">×</button>
+
+        <button type="button" data-digit="7">7</button>
+        <button type="button" data-digit="8">8</button>
+        <button type="button" data-digit="9">9</button>
+        <button type="button" class="op" data-op="sub">−</button>
+
+        <button type="button" data-digit="4">4</button>
+        <button type="button" data-digit="5">5</button>
+        <button type="button" data-digit="6">6</button>
+        <button type="button" class="op" data-op="add">+</button>
+
+        <button type="button" data-digit="1">1</button>
+        <button type="button" data-digit="2">2</button>
+        <button type="button" data-digit="3">3</button>
+        <button type="button" data-digit=".">.</button>
+
+        <button type="button" class="span2" data-digit="0">0</button>
+        <button type="button" class="eq" data-action="equals">=</button>
+      </div>
+    </div>
+
+    <p class="api-note">API: <code>/api/add?a=10&amp;b=3</code></p>
+  </div>
+
+  <script>
+    const exprEl = document.getElementById("expr");
+    const resultEl = document.getElementById("result");
+
+    let current = "0";
+    let stored = null;
+    let pendingOp = null;
+    let fresh = true;
+
+    const symbols = { add: "+", sub: "−", mul: "×", div: "÷" };
+
+    function show(value, isError = false) {
+      resultEl.textContent = value;
+      resultEl.classList.toggle("error", isError);
+    }
+
+    function updateExpr() {
+      if (stored !== null && pendingOp) {
+        exprEl.textContent = `${stored} ${symbols[pendingOp]}`;
+      } else {
+        exprEl.textContent = "";
+      }
+    }
+
+    function inputDigit(d) {
+      if (fresh) {
+        current = d === "." ? "0." : d;
+        fresh = false;
+      } else {
+        if (d === "." && current.includes(".")) return;
+        if (current === "0" && d !== ".") current = d;
+        else current += d;
+      }
+      show(current);
+    }
+
+    function setOp(op) {
+      if (stored !== null && pendingOp && !fresh) {
+        runEquals().then(() => {
+          stored = current;
+          pendingOp = op;
+          fresh = true;
+          updateExpr();
+        });
+        return;
+      }
+      stored = current;
+      pendingOp = op;
+      fresh = true;
+      updateExpr();
+    }
+
+    async function runEquals() {
+      if (stored === null || !pendingOp) return;
+      const a = stored;
+      const b = current;
+      const op = pendingOp;
+      exprEl.textContent = `${a} ${symbols[op]} ${b} =`;
+      try {
+        const res = await fetch("/api/calc", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ a: Number(a), b: Number(b), op }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "خطا");
+        current = String(data.result);
+        show(current);
+      } catch (err) {
+        show(err.message || "خطا", true);
+        current = "0";
+      }
+      stored = null;
+      pendingOp = null;
+      fresh = true;
+      return;
+    }
+
+    document.querySelector(".keys").addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn.dataset.digit !== undefined) inputDigit(btn.dataset.digit);
+      else if (btn.dataset.op) setOp(btn.dataset.op);
+      else if (btn.dataset.action === "clear") {
+        current = "0";
+        stored = null;
+        pendingOp = null;
+        fresh = true;
+        updateExpr();
+        show(current);
+      } else if (btn.dataset.action === "back") {
+        if (fresh) return;
+        current = current.length <= 1 ? "0" : current.slice(0, -1);
+        if (current === "-") current = "0";
+        show(current);
+        if (current === "0") fresh = true;
+      } else if (btn.dataset.action === "equals") {
+        runEquals();
+      }
+    });
+  </script>
+</body>
+</html>
